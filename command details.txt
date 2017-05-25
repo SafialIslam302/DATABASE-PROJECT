@@ -1,0 +1,17 @@
+/*arrange matches using their type exam:group,super,..*/
+/*how many game plays a team */
+/*how many game plays a team */
+/*arrange ticket information using their seat type exam:normal,vip...*/
+/*show the information about match in the ticket*/
+/*select those buyer who cut DHA match-vanue ticket*/
+/*select those buyer who cut BHA match ticket*/
+/*see how much select left for each match*/
+/*show the information about match to the buyer who cut ticket*/
+/*see a particular buyer the match-type and the ticket-price to her ticket*/
+/*see those ticket id they buy ticket for match no 2 and ticket cateroy 1*/
+/*see those ticket id they buy ticket for match no 1 or ticket cateroy 1*/
+/*see all ticket buyer in all particular match*/
+/* how many ticket available for a particular match with details*/
+/* maximum price in the ticket*/
+
+
