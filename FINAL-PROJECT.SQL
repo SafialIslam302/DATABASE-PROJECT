@@ -1,4 +1,4 @@
-spool d:/test1.txt;
+spool C:/Users/AYON/Desktop/database/1407041/text.txt;
 
 ----------------------- DROP ALL THE TABLE ------------------------------
 DROP TABLE MATCH_DETAILS cascade constraints;
@@ -7,9 +7,7 @@ DROP TABLE TICKET_INFO cascade constraints;
 DROP TABLE account cascade constraints;
 DROP TABLE ALL_DETAILS cascade constraints;
 
-
 ------------------------ CREATE ALL THE TABLE ----------------------------
-
 
 CREATE TABLE MATCH_DETAILS(
   MATCH_NO NUMBER(2) NOT NULL,
@@ -18,7 +16,8 @@ CREATE TABLE MATCH_DETAILS(
   MATCH_TYP VARCHAR(10),
   TEAM_NAME1 VARCHAR(4),
   TEAM_NAME2 VARCHAR(4),
-  TOTAL_SEAT NUMBER(10)
+  TOTAL_SEAT NUMBER(10),
+  TIME_LEFT NUMBER(10)
 );
 
 
@@ -59,33 +58,16 @@ ALTER TABLE TICKET_INFO ADD CONSTRAINT TIF_KEY FOREIGN KEY (MATCH_NO) REFERENCES
 ALTER TABLE BUYER_DETAILS ADD CONSTRAINT BDF_KEY FOREIGN KEY (TICKET_ID) REFERENCES TICKET_INFO(TICKET_ID) on delete cascade;
 
 
--------------------------------------- INSERT DATA INTO TABLE ------------------------------------
-INSERT INTO MATCH_DETAILS VALUES(1,'DHA','01-JAN-2017','GROUP','BAN','IND',10000);
-INSERT INTO MATCH_DETAILS VALUES(2,'CHI','02-JAN-2017','GROUP','AUS','SAF',20000);
-INSERT INTO MATCH_DETAILS VALUES(3,'KHU','03-JAN-2017','SUPER','NZ','PK',30000);
-INSERT INTO MATCH_DETAILS VALUES(4,'DHA','05-JAN-2017','SUPER','SL','WI',40000);
-INSERT INTO MATCH_DETAILS VALUES(5,'KHU','06-JAN-2017','SEMIFINAL','END','ZIM',50000);
+------------------------------- LOG IN ---------------------------------------
 
-
-INSERT INTO TICKET_INFO VALUES('A1001','N-01','NORMAL',1);
-INSERT INTO TICKET_INFO VALUES('B2001','N-02','NORMAL',2);
-INSERT INTO TICKET_INFO VALUES('B2002','M-01','MIDDLE',2);
-INSERT INTO TICKET_INFO VALUES('A3002','N-02','MIDDLE',3);
-INSERT INTO TICKET_INFO VALUES('A3001','M-01','VIP',3);
-INSERT INTO TICKET_INFO VALUES('A3003','M-02','VIP',2);
 
 insert into account values('AYON',41);
 insert into account values('PRANTO',03);
 insert into account values('ASIF',07);
 insert into account values('NAHID',21);
-
-COMMIT;
-
-
-------------------------------- LOG IN ---------------------------------------
-
 PROMPT You need to login first..
 PROMPT Enter your userid and password..
+
 
 SET SERVEROUTPUT ON
 DECLARE
@@ -104,14 +86,43 @@ BEGIN
     else
       dbms_output.put_line ('Id or password did not match');
     end if;  
-
-    EXCEPTION
-      WHEN others THEN
-        NULL;
 END;
 /
 
 PAUSE Press ENTER to continue 1 ...
+---------------------------------- TRIGGER (for match_details table) --------------------------------
+DROP TRIGGER TR_GRADE1; 
+CREATE or REPLACE TRIGGER TR_GRADE1 
+BEFORE UPDATE OR INSERT ON MATCH_DETAILS
+FOR EACH ROW 
+BEGIN
+      IF EXTRACT(DAY FROM(:new.MATCH_TIME - systimestamp)) > 1  THEN
+        :new.TIME_LEFT := EXTRACT(DAY FROM(:new.MATCH_TIME - systimestamp));
+      else
+      :new.TIME_LEFT := 0;
+    END IF;
+END TR_GRADE1;
+/
+SHOW ERRORS;
+
+
+-------------------------------------- INSERT DATA INTO TABLE ------------------------------------
+INSERT INTO MATCH_DETAILS VALUES(1,'DHA','11-JUL-2017','GROUP','BAN','IND',10000,NULL);
+INSERT INTO MATCH_DETAILS VALUES(2,'CHI','12-JUL-2017','GROUP','AUS','SAF',20000,NULL);
+INSERT INTO MATCH_DETAILS VALUES(3,'KHU','13-JUL-2017','SUPER','NZ','PK',30000,NULL);
+INSERT INTO MATCH_DETAILS VALUES(4,'DHA','15-JUL-2017','SUPER','SL','WI',40000,NULL);
+INSERT INTO MATCH_DETAILS VALUES(5,'KHU','16-JUL-2017','SEMIFINAL','END','ZIM',50000,NULL);
+
+
+INSERT INTO TICKET_INFO VALUES('A1001','N-01','NORMAL',1);
+INSERT INTO TICKET_INFO VALUES('B2001','N-02','NORMAL',2);
+INSERT INTO TICKET_INFO VALUES('B2002','M-01','MIDDLE',2);
+INSERT INTO TICKET_INFO VALUES('A3002','N-02','MIDDLE',3);
+INSERT INTO TICKET_INFO VALUES('A3001','M-01','VIP',3);
+INSERT INTO TICKET_INFO VALUES('A3003','M-02','VIP',2);
+
+COMMIT;
+
 
 ------------------------------- DESCRIBE ALL THE TABLE ------------------------------------
 describe MATCH_DETAILS;
@@ -119,9 +130,9 @@ describe BUYER_DETAILS;
 describe TICKET_INFO;
 
 
----------------------------------- TRIGGER AND ROLLBACK --------------------------------
-
-CREATE or REPLACE TRIGGER TR_GRADE1 
+---------------------------------- TRIGGER AND ROLLBACK (for buyer_details table) --------------------------------
+DROP TRIGGER TR_GRADE2; 
+CREATE or REPLACE TRIGGER TR_GRADE2 
 BEFORE UPDATE OR INSERT ON BUYER_DETAILS
 FOR EACH ROW 
 BEGIN
@@ -158,7 +169,7 @@ ELSIF :NEW.no_of_seat_needed = 3 and :NEW.ticket_category = 4  THEN
 ELSIF :NEW.no_of_seat_needed = 4 and :NEW.ticket_category = 4  THEN
   :NEW.total_price := (4 * 300) ;
 END IF;
-END TR_GRADE1;
+END TR_GRADE2;
 /
 SHOW ERRORS;
 
@@ -185,9 +196,10 @@ select * from BUYER_DETAILS;
 
 PAUSE Press ENTER to continue 2 ...
 
-
+select md.match_no,tI.ticket_id,bd.buyer_id from match_details md,TICKET-INFO ti, BUYER_DETAILS bd where 
+ti.TICKET_ID = bd.TICKET_ID and ti.match_no = md.match_no and md.match_no and bd.buyer_id = 'A01';
 --------------------------------- UPDATE -------------------------
-UPDATE match_details set match_vanue = 'KHU',match_time = '03-JAN-2017' where match_no = 1;
+UPDATE match_details set match_vanue = 'KHU',match_time = '23-JUL-2017' where match_no = 1;
 select * from match_details;
 
 UPDATE ticket_info set seat_no = 'A-01',seat_typ = 'VIP' where TICKET_ID = 'A1001';
@@ -200,8 +212,8 @@ PAUSE Press ENTER to continue 3 ...
 
 ------------------------------ ORDER BY + GROUP BY----------------------------------------
 
------------------------------- Show match order by the match no ---------------------------------
-select * from match_details order by match_no;
+------------------------------ Show match order by the day left ---------------------------------
+select * from match_details order by TIME_LEFT;
 
 ------------------------------ Show TICKET order by the Ticket Category ---------------------------------
 select TICKET_CATEGORY,BUYER_ID ,TICKET_ID,TOTAL_PRICE ,NO_OF_SEAT_NEEDED from BUYER_DETAILS order by ticket_category;
@@ -348,7 +360,7 @@ PAUSE Press ENTER to continue 8 ...
 
 -----------------------------------------   END -----------------------------------------------------
 
----------------------- INSERT DATA INTO ALL DETAILS TABLE USING THE DATA OF THREE TABLES ----------------------
+---------------------- INSERT DATA INTO ALL_DETAILS TABLE USING THE DATA OF THREE TABLES ----------------------
 
 INSERT INTO ALL_DETAILS SELECT MD.MATCH_NO,TI.TICKET_ID,BD.BUYER_ID FROM MATCH_DETAILS MD,TICKET_INFO TI,BUYER_DETAILS BD 
 WHERE MD.MATCH_NO = TI.MATCH_NO AND TI.TICKET_ID = BD.TICKET_ID;
@@ -385,7 +397,7 @@ end;
 SET SERVEROUTPUT ON;
 DECLARE
       CURSOR match_cur IS
-        select match_no,match_vanue,match_time,match_typ,team_name1,team_name2 from match_details;
+        select match_no,match_vanue,match_time,match_typ,team_name1,team_name2,time_left from match_details;
         match_t  match_cur%ROWTYPE;
         counter NUMBER;
         count1  NUMBER;
@@ -398,7 +410,8 @@ DECLARE
           counter := counter + 1;
           EXIT WHEN counter > count1; 
           DBMS_OUTPUT.PUT_LINE ('Match No : ' || match_t.match_no ||' Match Vanue : ' ||  match_t.match_vanue ||' Match Time : '|| match_t.match_time
-                                || ' Match Type : ' || match_t.match_typ || ' Team Name : ' || match_t.team_name1 || ' and Team Name : ' || match_t.team_name2);
+                                || ' Match Type : ' || match_t.match_typ || ' Team Name : ' || match_t.team_name1 || ' and Team Name : ' || match_t.team_name2
+                                || 'Time Left for the game : ' || match_t.time_left);
       END LOOP;
       CLOSE match_cur;
 end;
@@ -420,15 +433,16 @@ CREATE OR REPLACE PROCEDURE add_match(
   mty match_details.match_typ%TYPE,
   tn1 match_details.team_name1%TYPE,
   tn2 match_details.team_name2%TYPE,
-  tse match_details.total_seat%TYPE) IS
+  tse match_details.total_seat%TYPE,
+  tle match_details.time_left%TYPE) IS
 BEGIN
   INSERT INTO match_details
-  VALUES (mno,mvl,mti,mty,tn1,tn2,tse);
+  VALUES (mno,mvl,mti,mty,tn1,tn2,tse,tle);
 END add_match;
 /
 SHOW ERRORS
 BEGIN
-   add_match(&match_no,'&match_vanue','&match_time','&match_typ','&team_name1','&team_name2',&total_seat);
+   add_match(&match_no,'&match_vanue','&match_time','&match_typ','&team_name1','&team_name2',&total_seat,null);
 END;
 /
 select * from match_details;
@@ -455,7 +469,7 @@ BEGIN
   upd_match('&match_vanue','&match_time',&match_no);
 END;
 /
-SHOW ERRor;
+SHOW ERRORS
 select * from match_details;
 
 PAUSE Press ENTER to continue 13 ...
@@ -546,7 +560,7 @@ BEGIN
     FROM ticket_info where match_no=counter;
     SELECT min(TOTAL_SEAT - timn) into savl 
     FROM match_details where match_no=counter;
-    select  min(EXTRACT(DAY FROM match_time)-EXTRACT(DAY FROM systimestamp)) into diff from match_details
+    select  EXTRACT(DAY FROM(MATCH_TIME - systimestamp)) into diff from match_details
     where match_no=counter;
     dbms_output.put_line('Total ticket buy in match  : ' || counter || ' is ' || timn);
     dbms_output.put_line(' And Available is : '|| savl);
